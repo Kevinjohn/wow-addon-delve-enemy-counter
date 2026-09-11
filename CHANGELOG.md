@@ -22,6 +22,8 @@ All notable changes to this project are documented here, following
   the Settings API loads quietly and keeps the slash command.
 - Behaviour test harness in `tests/run.lua`, run with the luacheck pass by
   `sh scripts/check.sh`.
+- Pre-commit hook in `hooks/pre-commit` running those same checks, active once
+  per clone with `git config core.hooksPath hooks`.
 
 ### Notes
 - Separated out of Mislaid Curiosity TomTom, where this was one option among

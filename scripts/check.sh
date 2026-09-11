@@ -8,8 +8,12 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-echo "==> luacheck"
-luacheck *.lua
+if command -v luacheck >/dev/null 2>&1; then
+	echo "==> luacheck"
+	luacheck *.lua
+else
+	echo "==> luacheck (skipped: not installed)"
+fi
 
 # The tests target Lua 5.1 syntax, so any 5.1+ interpreter works — including
 # LuaJIT. Use the first one we find.

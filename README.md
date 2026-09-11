@@ -22,7 +22,16 @@ Also in Esc > Options > AddOns > Delve Enemy Counter.
 
 ## Checking
 
-    luacheck *.lua
+    sh scripts/check.sh
+
+Runs `luacheck` over the addon (config in `.luacheckrc`) and the behaviour
+harness in `tests/run.lua`. Any Lua 5.1 or later interpreter works.
+
+The same checks run as a pre-commit hook. Turn it on once per clone:
+
+    git config core.hooksPath hooks
+
+A commit whose checks fail is aborted; `git commit --no-verify` overrides it.
 
 ## Licence
 

@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# Pre-commit: luacheck and the behaviour harness must pass before a commit.
+#
+# Active once per clone:  git config core.hooksPath hooks
+# Bypass for one commit:  git commit --no-verify
+#
+# Checks the working tree, not the index, so unstaged changes are seen too.
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+if ! sh scripts/check.sh; then
+	echo >&2
+	echo "pre-commit: checks failed, commit aborted (git commit --no-verify to override)." >&2
+	exit 1
+fi
