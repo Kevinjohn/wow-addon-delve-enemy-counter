@@ -2,7 +2,7 @@
 ## Title: Delve Enemy Counter
 ## Notes: Puts the Nemesis Influence "enemy groups remaining" count on the tracker icon, so it can be read without a mouse.
 ## Author: Kevinjohn Gallagher
-## Version: 1.0.0
+## Version: 0.1.0
 ## X-License: MIT
 ## X-Website: https://github.com/Kevinjohn/wow-addon-delve-enemy-counter
 ## SavedVariables: DelveEnemyCounterDB
