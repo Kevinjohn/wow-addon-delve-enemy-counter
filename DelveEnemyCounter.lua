@@ -2,9 +2,10 @@
 --
 -- Inside a Delve, the tracker shows affixes such as Nemesis Influence as UI
 -- widget icons whose only readable state is a mouse-over tooltip like
--- "Enemy groups remaining: 1 / 4". This addon paints that remaining number
--- in white over the icon, so the count is visible without a mouse-over.
--- Nothing happens outside Delves.
+-- "Enemy groups remaining: 1 / 4". Those are enemy groups, not individual
+-- enemies: the count drops by one when a whole pack is cleared. This addon
+-- paints that remaining number in white over the icon, so it is readable
+-- without a mouse-over. Nothing happens outside Delves.
 --
 -- How it works: each widget frame carries widgetID and widgetType; the
 -- widget's data comes from the type's visualization-info function
@@ -252,7 +253,7 @@ local function Status()
             counts[#counts + 1] = remaining
         end
     end
-    Print(("%s; in a Delve: %s; remaining: %s"):format(
+    Print(("%s; in a Delve: %s; enemy groups remaining: %s"):format(
         db.enabled and "on" or "off",
         InDelve() and "yes" or "no",
         #counts > 0 and table.concat(counts, ", ") or "nothing found"))
@@ -318,7 +319,7 @@ end
 local function RegisterOptions()
     local category = Settings.RegisterVerticalLayoutCategory(ADDON_TITLE)
     local setting = Settings.RegisterProxySetting(category, "DelveEnemyCounter_enabled",
-        Settings.VarType.Boolean, "Show enemies remaining",
+        Settings.VarType.Boolean, "Show enemy groups remaining",
         DEFAULTS.enabled and Settings.Default.True or Settings.Default.False,
         function() return db.enabled == true end,
         function(value)
@@ -326,7 +327,7 @@ local function RegisterOptions()
             UpdateOverlays()
         end)
     Settings.CreateCheckbox(category, setting,
-        "Paint the \"enemy groups remaining\" number on its Delve tracker icon, so no mouse-over is needed.")
+        "Paint the Nemesis Influence \"enemy groups remaining\" number on its Delve tracker icon, so no mouse-over is needed.")
     Settings.RegisterAddOnCategory(category)
 end
 

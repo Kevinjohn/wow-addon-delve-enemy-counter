@@ -201,8 +201,17 @@ end
 check(sawWidget, "/dec debug lists widgets with their remaining count")
 
 ns.SlashHandler("status")
-check(chat[#chat]:find("in a Delve: yes", 1, true) ~= nil and chat[#chat]:find("remaining:", 1, true) ~= nil,
-	"/dec status reports the state and the counts found")
+check(chat[#chat]:find("in a Delve: yes", 1, true) ~= nil
+	and chat[#chat]:find("enemy groups remaining: ", 1, true) ~= nil,
+	"/dec status reports the state and the groups remaining")
+do
+	-- the counts are gathered by iterating the widget registry, so compare
+	-- them as a set rather than in an order pairs() does not promise
+	local found = {}
+	for n in (chat[#chat]:match("enemy groups remaining: (.*)$") or ""):gmatch("%d+") do found[#found + 1] = n end
+	table.sort(found)
+	check(table.concat(found, ",") == "0,2,2", "status lists every widget's count (got " .. table.concat(found, ",") .. ")")
+end
 
 ns.SlashHandler("off")
 check(db.enabled == false and overlays[nemesisWidget].shown == false, "/dec off hides the numbers")

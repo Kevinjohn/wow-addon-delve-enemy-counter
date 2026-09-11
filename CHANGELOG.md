@@ -7,9 +7,10 @@ All notable changes to this project are documented here, following
 ## [1.0.0]
 
 ### Added
-- First version. Inside a Delve, paints the "enemy groups remaining" count in
-  white over the Delve tracker's affix icon, so the number is readable without
-  a mouse-over. Nothing happens outside Delves.
+- First version. Inside a Delve, paints the Nemesis Influence "enemy groups
+  remaining" count in white over the Delve tracker's affix icon, so the number
+  is readable without a mouse-over. It is the game's own figure, counting enemy
+  groups rather than individual enemies. Nothing happens outside Delves.
 - The count is read from whichever source the client has: the widget manager's
   own data for the widget, an affix spell's live description (painted on that
   spell's own icon), or a tooltip kept on the widget frame or one of its
