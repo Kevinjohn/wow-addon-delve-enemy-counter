@@ -1,0 +1,25 @@
+package-as: DelveEnemyCounter
+
+enable-nolib-creation: no
+
+# Ship our curated changelog instead of the packager's auto-generated git-log
+# dump. (With no manual-changelog, the packager builds a CHANGELOG.md from git
+# history and adds it to the zip regardless of the ignore list below.)
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+# Repo-only files that should never ship inside the addon zip. With the addon at
+# the repo root, this list is what separates the shipped files (the .toc, the
+# .lua, LICENSE, and the curated CHANGELOG.md above) from everything else.
+ignore:
+  - .release
+  - .github
+  - .gitignore
+  - .gitattributes
+  - .luacheckrc
+  - .pkgmeta
+  - hooks
+  - scripts
+  - tests
+  - README.md

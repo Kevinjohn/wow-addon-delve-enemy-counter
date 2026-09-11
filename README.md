@@ -19,7 +19,8 @@ not individual mobs.
 
 ## Install
 
-Copy `DelveEnemyCounter.toc` and `DelveEnemyCounter.lua` into
+From [CurseForge](https://www.curseforge.com/wow/addons/delve-enemy-counter), or
+copy `DelveEnemyCounter.toc` and `DelveEnemyCounter.lua` into
 `World of Warcraft/_retail_/Interface/AddOns/DelveEnemyCounter/`.
 
 Turn it off any time: Esc > Options > AddOns > Delve Enemy Counter, or `/dec off`.

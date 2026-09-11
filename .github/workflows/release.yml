@@ -1,0 +1,66 @@
+# Build and publish a release whenever a version tag is pushed.
+#
+# Publish-only by design: this workflow does NOT run luacheck or tests. Testing
+# stays local — the pre-commit hook runs `sh scripts/check.sh`, and so should you
+# before pushing a tag. Keep it that way; don't add a test job here.
+#
+# Runs the BigWigs packager. On a tag push it:
+#   - builds the DelveEnemyCounter zip from the repo-root layout,
+#   - stamps @project-version@ in the .toc with the tag,
+#   - creates a GitHub Release and attaches the zip (uses the built-in token),
+#   - uploads to CurseForge, project 1691528.
+#
+# The CurseForge upload needs a repo secret (Settings -> Secrets and variables
+# -> Actions):
+#     CF_API_TOKEN  - https://authors.curseforge.com/account/api-tokens
+# Without it the packager skips CurseForge silently — the zip and the GitHub
+# Release are still built, so a tag pushed too early publishes nowhere but here.
+# GITHUB_TOKEN is provided automatically; no secret to add for the Release.
+#
+# Docs: https://github.com/BigWigsMods/packager
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # needed for the packager to create the GitHub Release
+
+jobs:
+  release:
+    name: Package and release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full history + tags so the packager can read the version
+
+      - name: Trim changelog header for published notes
+        # The packager ships CHANGELOG.md verbatim as the GitHub Release body,
+        # the CurseForge changelog, and the in-zip changelog. Drop the repo-file
+        # header (the "# Changelog" title and its tagline) so the published notes
+        # start at the first version heading. Keeps full history; just removes the
+        # boilerplate. Runs on the CI checkout, so the committed CHANGELOG.md
+        # keeps its header for anyone browsing the repo. The rule — "everything
+        # from the first '## ' heading onward" — is independent of the exact
+        # title/tagline wording, so edits to those can't break it.
+        run: |
+          awk '/^## / { keep = 1 } keep' CHANGELOG.md > CHANGELOG.trimmed
+          mv CHANGELOG.trimmed CHANGELOG.md
+
+      - name: Package and release
+        uses: BigWigsMods/packager@v2
+        env:
+          # packager@v2's release.sh reads the CurseForge token from CF_API_KEY.
+          # CF_API_TOKEN is only the name on the (unreleased) master branch, so
+          # passing just CF_API_TOKEN makes v2 silently skip the CurseForge upload
+          # (no error — it just sees an empty token). Pass the same secret under
+          # both names: works on v2 now, and survives a later bump to a version
+          # that switches to CF_API_TOKEN. Missing token or id => that service is
+          # skipped.
+          CF_API_KEY: ${{ secrets.CF_API_TOKEN }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
