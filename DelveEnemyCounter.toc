@@ -1,0 +1,11 @@
+## Interface: 120100
+## Title: Delve Enemy Counter
+## Notes: In a Delve, paints the "enemy groups remaining" count on the tracker icon, so no mouse-over is needed.
+## Author: Kevinjohn Gallagher
+## Version: 1.0.0
+## X-License: MIT
+## X-Website: https://github.com/Kevinjohn/wow-addon-delve-enemy-counter
+## SavedVariables: DelveEnemyCounterDB
+## IconTexture: Interface\Icons\INV_Misc_Bag_10
+
+DelveEnemyCounter.lua
