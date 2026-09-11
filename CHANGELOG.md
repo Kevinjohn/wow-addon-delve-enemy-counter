@@ -31,3 +31,6 @@ All notable changes to this project are documented here, following
 ### Notes
 - Separated out of Mislaid Curiosity TomTom, where this was one option among
   many, into an addon that does only this.
+- The overlay's look -- white text centred on the icon, no size or colour
+  setting -- is deliberately plain and expected to change.
+- Not yet tested in a live Delve; the test harness stubs the widget API.
