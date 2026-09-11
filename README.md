@@ -1,42 +1,34 @@
 # Delve Enemy Counter
 
-A small World of Warcraft addon. Inside a Delve, affixes such as Nemesis
-Influence keep their "Enemy groups remaining: 1 / 4" state in a mouse-over
-tooltip on the tracker's widget icon. This addon paints the remaining number
-in white over that icon, so it is readable at a glance.
+**Shows how many enemy groups are left in your Delve, without the mouse-over.**
 
-The game counts enemy *groups*, not individual enemies: the number drops by
-one when a whole pack is cleared, so four groups left is a good deal more than
-four mobs. The addon shows the game's own figure and does no arithmetic of its
-own.
+When a Delve rolls Nemesis Influence, you have to clear a set number of enemy
+groups. The game tracks it — but only tells you if you stop and hover the affix
+icon. Mid-pull, that means you don't know whether you're one group from done or
+four.
 
-Nothing happens outside Delves.
+This paints the number straight onto the icon. Glance, don't hover.
+
+Nothing happens outside Delves. The number is the game's own; it counts groups,
+not individual mobs.
 
 ## Install
 
 Copy `DelveEnemyCounter.toc` and `DelveEnemyCounter.lua` into
 `World of Warcraft/_retail_/Interface/AddOns/DelveEnemyCounter/`.
 
+Turn it off any time: Esc > Options > AddOns > Delve Enemy Counter, or `/dec off`.
+
 ## Commands
 
-    /dec            show the current state and any groups remaining
-    /dec on|off     turn the overlay on or off
-    /dec debug      dump every widget frame and the text the count came from
+    /dec            what it's doing, and the groups remaining
+    /dec on|off     turn the number on or off
+    /dec debug      what the addon can see (for bug reports)
 
-Also in Esc > Options > AddOns > Delve Enemy Counter.
+## Developing
 
-## Checking
-
-    sh scripts/check.sh
-
-Runs `luacheck` over the addon (config in `.luacheckrc`) and the behaviour
-harness in `tests/run.lua`. Any Lua 5.1 or later interpreter works.
-
-The same checks run as a pre-commit hook. Turn it on once per clone:
-
-    git config core.hooksPath hooks
-
-A commit whose checks fail is aborted; `git commit --no-verify` overrides it.
+    sh scripts/check.sh              # luacheck + tests/run.lua
+    git config core.hooksPath hooks  # once per clone: run those before each commit
 
 ## Licence
 
