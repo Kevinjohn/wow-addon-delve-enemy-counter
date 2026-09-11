@@ -1,13 +1,18 @@
 # Delve Enemy Counter
 
-**Shows how many enemy groups are left in your Delve, without the mouse-over.**
+**Puts the enemy groups remaining on screen, where anyone can read it.**
 
-When a Delve rolls Nemesis Influence, you have to clear a set number of enemy
-groups. The game tracks it — but only tells you if you stop and hover the affix
-icon. Mid-pull, that means you don't know whether you're one group from done or
-four.
+A Delve with Nemesis Influence gives you a quota of enemy groups to clear. The
+game tracks it, then shows it only to a mouse pointer parked on the affix icon.
 
-This paints the number straight onto the icon. Glance, don't hover.
+If you don't use a mouse, that count doesn't exist. Not slower to reach —
+unavailable. Keyboard, controller, or any setup that can't rest a pointer on
+one small icon on demand: the game is keeping progress you need to play well
+behind an input method you don't have. Hover is a fine way to offer detail. It
+is not a fine way to be the only way.
+
+This paints the number onto the icon and leaves it there. No pointer, no hover,
+no interaction. Mouse users get it at a glance mid-pull too.
 
 Nothing happens outside Delves. The number is the game's own; it counts groups,
 not individual mobs.

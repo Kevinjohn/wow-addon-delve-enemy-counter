@@ -3,9 +3,12 @@
 -- Inside a Delve, the tracker shows affixes such as Nemesis Influence as UI
 -- widget icons whose only readable state is a mouse-over tooltip like
 -- "Enemy groups remaining: 1 / 4". Those are enemy groups, not individual
--- enemies: the count drops by one when a whole pack is cleared. This addon
--- paints that remaining number in white over the icon, so it is readable
--- without a mouse-over. Nothing happens outside Delves.
+-- enemies: the count drops by one when a whole pack is cleared.
+--
+-- Hover is the only way the game offers that number, which puts it out of
+-- reach of anyone not playing with a mouse. This addon paints it in white
+-- over the icon and leaves it there, so no pointer is needed to read it.
+-- Nothing happens outside Delves.
 --
 -- How it works: each widget frame carries widgetID and widgetType; the
 -- widget's data comes from the type's visualization-info function
@@ -327,7 +330,7 @@ local function RegisterOptions()
             UpdateOverlays()
         end)
     Settings.CreateCheckbox(category, setting,
-        "Paint the Nemesis Influence \"enemy groups remaining\" number on its Delve tracker icon, so no mouse-over is needed.")
+        "Keep the Nemesis Influence \"enemy groups remaining\" number on its Delve tracker icon, so it can be read without a mouse.")
     Settings.RegisterAddOnCategory(category)
 end
 
