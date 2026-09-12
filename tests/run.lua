@@ -55,8 +55,10 @@ local function widget()
 	function w:SetText(t) self.textValue = t end
 	function w:CreateFontString() return widget() end
 	function w:CreateTexture() return widget() end
-	function w:SetTexture(t) self.texture = t end
+	-- false, not nil: a nil field would fall through to the catch-all below
+	function w:SetTexture(t) self.texture, self.atlas = t or false, false end
 	function w:GetTexture() return self.texture end
+	function w:SetAtlas(a) self.atlas, self.texture = a, false end
 	function w:Layout() self.layouts = (rawget(self, "layouts") or 0) + 1 end
 	return setmetatable(w, { __index = function() return function() end end })
 end
@@ -96,7 +98,10 @@ local descriptions = {
 	[1001] = "Curiosity buff.",
 	[1002] = "The Nemesis's allies are wandering.\n\nEnemy groups remaining: 3 / 4",
 }
-_G.C_Spell = { GetSpellDescription = function(id) return descriptions[id] end }
+_G.C_Spell = {
+	GetSpellDescription = function(id) return descriptions[id] end,
+	GetSpellTexture = function(id) return "Interface\\Icons\\Spell_" .. tostring(id) end,
+}
 local plain = widget()
 -- Widget containers as the widget manager registers them: one keyed by the
 -- container frame, one nested under a set ID, plus a stray non-container.
@@ -219,6 +224,48 @@ check(headerBadge().shown == false, "an affix that stops reporting a ratio loses
 descriptions[1002] = savedDescription
 fire("UPDATE_UI_WIDGET")
 check(headerBadge().shown == true and headerBadge().Text.textValue == "2", "and gets it back when it returns")
+
+-- --------------------------------------------------------------- icon + size
+do
+	local SKULL = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8"
+	check(db.icon == "skull" and db.iconScale == 0.8, "icon and size have defaults")
+
+	ns.SlashHandler("icon heart")
+	check(headerBadge().Icon.texture == "Interface\\Icons\\Heart", "/dec icon heart copies the neighbour")
+	ns.SlashHandler("icon affix")
+	check(headerBadge().Icon.texture == "Interface\\Icons\\Spell_1002",
+		"/dec icon affix uses the reporting spell's own icon")
+	ns.SlashHandler("icon swords")
+	check(headerBadge().Icon.atlas == "roleicon-tiny-dps" and headerBadge().Icon.texture == false,
+		"/dec icon swords sets an atlas")
+	ns.SlashHandler("icon Interface\\Icons\\INV_Misc_Bone_01")
+	check(headerBadge().Icon.texture == "Interface\\Icons\\INV_Misc_Bone_01",
+		"/dec icon takes a texture path as typed, case kept")
+
+	ns.SlashHandler("size 1.25")
+	check(db.iconScale == 1.25, "/dec size sets the size")
+	ns.SlashHandler("size 99")
+	check(db.iconScale == 2, "/dec size clamps to the top of the range")
+	ns.SlashHandler("size -1")
+	check(db.iconScale == 0.3, "and to the bottom")
+	local before = #chat
+	ns.SlashHandler("size")
+	check(#chat > before and chat[#chat]:find("size 0.30", 1, true) ~= nil, "/dec size with no number reports it")
+	before = #chat
+	ns.SlashHandler("icon")
+	check(chat[#chat]:find("skull, swords, cross, heart, affix", 1, true) ~= nil,
+		"/dec icon with no name lists the choices")
+
+	ns.SlashHandler("reset")
+	check(db.icon == "skull" and db.iconScale == 0.8 and headerBadge().Icon.texture == SKULL,
+		"/dec reset puts both back")
+
+	ns.SlashHandler("icon swords")
+	load()
+	check(db.icon == "swords", "the icon choice survives a /reload")
+	ns.SlashHandler("reset")
+	fire("UPDATE_UI_WIDGET")
+end
 
 -- -------------------------------------------------------------------- /dec
 ns.SlashHandler("debug")

@@ -15,6 +15,13 @@ All notable changes to this project are documented here, following
   the old overlay.
 - The icon is the skull raid marker, the game's own "enemies" mark, sized to
   sit level with the lives-remaining heart beside it.
+
+### Added
+- `/dec icon <name>` and `/dec size <n>`, both taking effect on the spot with
+  no reload, plus `/dec reset`. Icons: `skull`, `swords`, `cross`, `heart`
+  (copies the lives icon) and `affix` (the reporting affix's own spell icon);
+  any texture path or atlas name is accepted too. Size is a fraction of the
+  lives icon beside it, 0.3 to 2. Both are saved.
 - Hovering the count shows the text it was read from.
 
 ## [0.1.0] - 2026-09-11

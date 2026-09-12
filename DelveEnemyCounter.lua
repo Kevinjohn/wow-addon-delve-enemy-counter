@@ -31,7 +31,9 @@ local DELVE_DIFFICULTY_ID = (DifficultyUtil and DifficultyUtil.ID and Difficulty
 local SCAN_DELAY = 0.5
 
 local DEFAULTS = {
-    enabled = true, -- master switch
+    enabled = true,  -- master switch
+    icon = "skull",  -- a name from ICONS below, or a texture path
+    iconScale = 0.8, -- fraction of the neighbouring currency icon's size
 }
 
 local db
@@ -222,17 +224,79 @@ end
 -- a 5px gap, count. We put one more frame of that shape in the container at
 -- layoutIndex 0, so Blizzard's own layout places it left of the heart with
 -- the container's spacing, and we take the heart's icon size, font and colour
--- so the row reads as one. The icon itself is the skull raid marker: the
--- game's own "enemies" mark, flat art at the same weight as the heart.
+-- so the row reads as one. The art defaults to the skull raid marker, the
+-- game's own "enemies" mark; /dec icon and /dec size change both live,
+-- because judging either one needs seeing it in a real Delve.
 local BADGE_LAYOUT_INDEX = 0
 local BADGE_ICON_GAP = 5
-local BADGE_ICON = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8"
 -- Used when there is no currency frame to take a size from.
 local BADGE_ICON_SIZE = 16
--- The skull's art fills its square where the heart's leaves a margin, so at
--- the same box size it reads larger. Draw it at a fraction of the heart's
--- box so it sits level whatever size the client gives the heart.
-local BADGE_ICON_SCALE = 0.8
+local MIN_ICON_SCALE, MAX_ICON_SCALE = 0.3, 2
+
+-- Icons worth trying, in the order /dec icon lists them. "heart" copies the
+-- neighbouring currency icon and "affix" the reporting affix's own spell
+-- icon, so both follow whatever the client shows; the rest are fixed art.
+-- Any texture path or atlas name can be given to /dec icon instead.
+local ICONS = {
+    { name = "skull",  texture = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8" },
+    { name = "swords", atlas = "roleicon-tiny-dps" },
+    { name = "cross",  texture = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_7" },
+    { name = "heart",  copyNeighbour = true },
+    { name = "affix",  fromSpell = true },
+}
+local ICONS_BY_NAME = {}
+for _, choice in ipairs(ICONS) do
+    ICONS_BY_NAME[choice.name] = choice
+end
+
+local function IconNames()
+    local names = {}
+    for i, choice in ipairs(ICONS) do
+        names[i] = choice.name
+    end
+    return table.concat(names, ", ")
+end
+
+local function SpellTexture(spellID)
+    if spellID and C_Spell and C_Spell.GetSpellTexture then
+        return C_Spell.GetSpellTexture(spellID)
+    end
+    return nil
+end
+
+-- Paint the chosen art onto the badge's texture. `model` is the neighbouring
+-- currency frame and `source` the frame the count was read from, when the
+-- choice needs one; either may be missing, and then the default is used.
+local function ApplyIcon(texture, model, source)
+    local choice = ICONS_BY_NAME[db.icon]
+    if choice and choice.copyNeighbour then
+        local neighbour = model and model.Icon and model.Icon:GetTexture()
+        if neighbour then
+            texture:SetTexture(neighbour)
+            return
+        end
+    elseif choice and choice.fromSpell then
+        local spellTexture = SpellTexture(source and source.spellID)
+        if spellTexture then
+            texture:SetTexture(spellTexture)
+            return
+        end
+    elseif choice and choice.atlas then
+        texture:SetAtlas(choice.atlas)
+        return
+    elseif choice and choice.texture then
+        texture:SetTexture(choice.texture)
+        return
+    elseif not choice then
+        -- Whatever was typed: a texture path, or an atlas name if that fails.
+        texture:SetTexture(db.icon)
+        if not texture:GetTexture() then
+            texture:SetAtlas(db.icon)
+        end
+        return
+    end
+    texture:SetTexture(ICONS[1].texture)
+end
 
 -- The leftmost currency frame the header currently shows (the heart), to
 -- take size, font and colour from.
@@ -275,9 +339,10 @@ local function BadgeFor(container)
     return badge
 end
 
--- Draw the count in the header's currency row, matched to the heart beside it.
+-- Draw the count in the header's currency row, matched to the heart beside
+-- it. `source` is the frame the count was read from, for the affix icon.
 -- Returns the badge, or nil when this widget has no such row.
-local function PaintBadge(header, remaining, tooltipText)
+local function PaintBadge(header, remaining, tooltipText, source)
     local container = header.CurrencyContainer
     if type(container) ~= "table" then
         return nil
@@ -285,10 +350,11 @@ local function PaintBadge(header, remaining, tooltipText)
     local badge = BadgeFor(container)
     local model = ModelCurrency(header)
     local icon = model and model.Icon
-    badge.Icon:SetTexture(BADGE_ICON)
+    ApplyIcon(badge.Icon, model, source)
     badge.Icon:SetVertexColor(1, 1, 1, 1)
-    badge.Icon:SetSize(((icon and icon:GetWidth()) or BADGE_ICON_SIZE) * BADGE_ICON_SCALE,
-        ((icon and icon:GetHeight()) or BADGE_ICON_SIZE) * BADGE_ICON_SCALE)
+    local scale = db.iconScale or DEFAULTS.iconScale
+    badge.Icon:SetSize(((icon and icon:GetWidth()) or BADGE_ICON_SIZE) * scale,
+        ((icon and icon:GetHeight()) or BADGE_ICON_SIZE) * scale)
     if model and model.Text then
         local font = model.Text:GetFontObject()
         if font then
@@ -334,7 +400,7 @@ local function UpdateOverlays()
     for _, frame in ipairs(WidgetFrames()) do
         local remaining, text, target = WidgetRemaining(frame)
         if remaining then
-            local badge = PaintBadge(frame, remaining, text)
+            local badge = PaintBadge(frame, remaining, text, target)
             if badge then
                 shownBadges[badge] = true
             else
@@ -382,10 +448,42 @@ local function Status()
             counts[#counts + 1] = remaining
         end
     end
-    Print(("%s; in a Delve: %s; enemy groups remaining: %s"):format(
+    Print(("%s; in a Delve: %s; icon %s at %.2f; enemy groups remaining: %s"):format(
         db.enabled and "on" or "off",
         InDelve() and "yes" or "no",
+        tostring(db.icon), db.iconScale or DEFAULTS.iconScale,
         #counts > 0 and table.concat(counts, ", ") or "nothing found"))
+end
+
+-- Both of these take effect on the next repaint, which is immediate, so the
+-- look can be settled in one visit to a Delve instead of one per reload.
+local function SetIcon(value)
+    if value == "" then
+        Print(("icon %s; try one of: %s, or a texture path or atlas name."):format(
+            tostring(db.icon), IconNames()))
+        return
+    end
+    db.icon = value
+    UpdateOverlays()
+    Print("icon " .. value)
+end
+
+local function SetScale(value)
+    local scale = tonumber(value)
+    if not scale then
+        Print(("size %.2f; give a number between %.1f and %.1f (1 matches the heart)."):format(
+            db.iconScale or DEFAULTS.iconScale, MIN_ICON_SCALE, MAX_ICON_SCALE))
+        return
+    end
+    db.iconScale = math.max(MIN_ICON_SCALE, math.min(MAX_ICON_SCALE, scale))
+    UpdateOverlays()
+    Print(("size %.2f"):format(db.iconScale))
+end
+
+local function Reset()
+    db.icon, db.iconScale = DEFAULTS.icon, DEFAULTS.iconScale
+    UpdateOverlays()
+    Print(("icon and size back to the defaults: %s at %.2f"):format(db.icon, db.iconScale))
 end
 
 local function Debug()
@@ -422,10 +520,23 @@ local function Debug()
     end
 end
 
-local USAGE = "usage: /dec on|off, /dec status, /dec debug"
+local USAGE = "usage: /dec on|off, /dec icon <name>, /dec size <n>, /dec reset, /dec status, /dec debug"
 
 local function SlashHandler(msg)
-    local cmd = (msg or ""):lower():match("^%s*(%S*)")
+    msg = msg or ""
+    local cmd = msg:lower():match("^%s*(%S*)")
+    -- The argument keeps its case: texture paths are case-sensitive.
+    local arg = msg:match("^%s*%S*%s+(.-)%s*$") or ""
+    if cmd == "icon" then
+        SetIcon(arg)
+        return
+    elseif cmd == "size" or cmd == "scale" then
+        SetScale(arg)
+        return
+    elseif cmd == "reset" then
+        Reset()
+        return
+    end
     if cmd == "on" or cmd == "off" then
         db.enabled = (cmd == "on")
         UpdateOverlays()

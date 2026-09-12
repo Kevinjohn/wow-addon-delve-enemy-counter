@@ -29,9 +29,15 @@ Turn it off any time: Esc > Options > AddOns > Delve Enemy Counter, or `/dec off
 
 ## Commands
 
-    /dec            what it's doing, and the groups remaining
-    /dec on|off     turn the number on or off
-    /dec debug      what the addon can see (for bug reports)
+    /dec              what it's doing, and the groups remaining
+    /dec on|off       turn the number on or off
+    /dec icon <name>  skull, swords, cross, heart, affix, or a texture path
+    /dec size <n>     icon size, 1 matches the lives icon beside it
+    /dec reset        icon and size back to the defaults
+    /dec debug        what the addon can see (for bug reports)
+
+The icon and size change on the spot, no reload, so they can be judged in a
+real Delve rather than guessed at.
 
 ## Developing
 
