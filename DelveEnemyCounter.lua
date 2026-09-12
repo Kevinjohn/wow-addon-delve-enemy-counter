@@ -33,8 +33,9 @@ local SCAN_DELAY = 0.5
 local DEFAULTS = {
     enabled = true,  -- master switch
     icon = "skull",  -- a name from ICONS below, or a texture path
-    iconScale = 0.8, -- fraction of the neighbouring currency icon's size
-    iconGap = 5,     -- pixels between the icon and the count
+    iconScale = 0.65, -- fraction of the neighbouring currency icon's size
+    iconGap = 7,      -- pixels between the icon and the count
+    iconY = 0,        -- pixels to lift the icon, to sit level with the count
 }
 
 local db
@@ -233,6 +234,7 @@ local BADGE_LAYOUT_INDEX = 0
 local BADGE_ICON_SIZE = 16
 local MIN_ICON_SCALE, MAX_ICON_SCALE = 0.3, 2
 local MIN_ICON_GAP, MAX_ICON_GAP = 0, 20
+local MIN_ICON_Y, MAX_ICON_Y = -10, 10
 
 -- Icons worth trying, in the order /dec icon lists them. "heart" copies the
 -- neighbouring currency icon and "affix" the reporting affix's own spell
@@ -329,10 +331,9 @@ local function BadgeFor(container)
     if not badge then
         badge = CreateFrame("Frame", nil, container)
         badge.layoutIndex = BADGE_LAYOUT_INDEX
+        -- Both are anchored per paint: the nudge and the gap can change.
         badge.Icon = badge:CreateTexture(nil, "OVERLAY")
-        badge.Icon:SetPoint("LEFT")
         badge.Text = badge:CreateFontString(nil, "OVERLAY", "GameFontNormal_NoShadow")
-        badge.Text:SetPoint("LEFT", badge.Icon, "RIGHT", 0, 0)
         badge:SetScript("OnEnter", BadgeTooltip)
         badge:SetScript("OnLeave", function() GameTooltip:Hide() end)
         badges[container] = badge
@@ -363,11 +364,16 @@ local function PaintBadge(header, remaining, tooltipText, source)
         end
         badge.Text:SetTextColor(model.Text:GetTextColor())
     end
+    -- The count keeps the badge's own vertical centre, like the neighbouring
+    -- currency's text does, so nudging the icon does not take it along.
     local gap = db.iconGap or DEFAULTS.iconGap
-    badge.Text:SetPoint("LEFT", badge.Icon, "RIGHT", gap, 0)
+    local iconWidth = badge.Icon:GetWidth() or BADGE_ICON_SIZE
+    badge.Icon:ClearAllPoints()
+    badge.Icon:SetPoint("LEFT", badge, "LEFT", 0, db.iconY or DEFAULTS.iconY)
+    badge.Text:ClearAllPoints()
+    badge.Text:SetPoint("LEFT", badge, "LEFT", iconWidth + gap, 0)
     badge.Text:SetText(remaining)
     badge.tooltipText = tooltipText
-    local iconWidth = badge.Icon:GetWidth() or BADGE_ICON_SIZE
     local iconHeight = badge.Icon:GetHeight() or BADGE_ICON_SIZE
     local textWidth = badge.Text:GetStringWidth() or 0
     local textHeight = badge.Text:GetStringHeight() or 0
@@ -451,10 +457,11 @@ local function Status()
             counts[#counts + 1] = remaining
         end
     end
-    Print(("%s; in a Delve: %s; icon %s at %.2f, gap %d; enemy groups remaining: %s"):format(
+    Print(("%s; in a Delve: %s; icon %s at %.2f, gap %d, y %d; enemy groups remaining: %s"):format(
         db.enabled and "on" or "off",
         InDelve() and "yes" or "no",
         tostring(db.icon), db.iconScale or DEFAULTS.iconScale, db.iconGap or DEFAULTS.iconGap,
+        db.iconY or DEFAULTS.iconY,
         #counts > 0 and table.concat(counts, ", ") or "nothing found"))
 end
 
@@ -495,10 +502,24 @@ local function SetGap(value)
     Print(("gap %d"):format(db.iconGap))
 end
 
-local function Reset()
-    db.icon, db.iconScale, db.iconGap = DEFAULTS.icon, DEFAULTS.iconScale, DEFAULTS.iconGap
+local function SetIconY(value)
+    local y = tonumber(value)
+    if not y then
+        Print(("y %d; give a number of pixels between %d and %d (positive lifts the icon)."):format(
+            db.iconY or DEFAULTS.iconY, MIN_ICON_Y, MAX_ICON_Y))
+        return
+    end
+    db.iconY = math.max(MIN_ICON_Y, math.min(MAX_ICON_Y, math.floor(y + 0.5)))
     UpdateOverlays()
-    Print(("back to the defaults: icon %s at %.2f, gap %d"):format(db.icon, db.iconScale, db.iconGap))
+    Print(("y %d"):format(db.iconY))
+end
+
+local function Reset()
+    db.icon, db.iconScale = DEFAULTS.icon, DEFAULTS.iconScale
+    db.iconGap, db.iconY = DEFAULTS.iconGap, DEFAULTS.iconY
+    UpdateOverlays()
+    Print(("back to the defaults: icon %s at %.2f, gap %d, y %d"):format(
+        db.icon, db.iconScale, db.iconGap, db.iconY))
 end
 
 local function Debug()
@@ -535,7 +556,7 @@ local function Debug()
     end
 end
 
-local USAGE = "usage: /dec on|off, /dec icon <name>, /dec size <n>, /dec gap <n>, /dec reset, /dec status, /dec debug"
+local USAGE = "usage: /dec on|off, /dec icon <name>, /dec size <n>, /dec gap <n>, /dec y <n>, /dec reset, /dec status, /dec debug"
 
 local function SlashHandler(msg)
     msg = msg or ""
@@ -550,6 +571,9 @@ local function SlashHandler(msg)
         return
     elseif cmd == "gap" then
         SetGap(arg)
+        return
+    elseif cmd == "y" then
+        SetIconY(arg)
         return
     elseif cmd == "reset" then
         Reset()

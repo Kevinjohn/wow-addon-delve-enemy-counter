@@ -228,7 +228,8 @@ check(headerBadge().shown == true and headerBadge().Text.textValue == "2", "and 
 -- --------------------------------------------------------------- icon + size
 do
 	local SKULL = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8"
-	check(db.icon == "skull" and db.iconScale == 0.8 and db.iconGap == 5, "icon, size and gap have defaults")
+	check(db.icon == "skull" and db.iconScale == 0.65 and db.iconGap == 7 and db.iconY == 0,
+		"icon, size, gap and nudge have defaults")
 
 	ns.SlashHandler("icon heart")
 	check(headerBadge().Icon.texture == "Interface\\Icons\\Heart", "/dec icon heart copies the neighbour")
@@ -261,8 +262,13 @@ do
 	ns.SlashHandler("gap 99")
 	check(db.iconGap == 20, "/dec gap clamps")
 
+	ns.SlashHandler("y 3")
+	check(db.iconY == 3, "/dec y lifts the icon")
+	ns.SlashHandler("y -99")
+	check(db.iconY == -10, "/dec y clamps")
+
 	ns.SlashHandler("reset")
-	check(db.icon == "skull" and db.iconScale == 0.8 and db.iconGap == 5
+	check(db.icon == "skull" and db.iconScale == 0.65 and db.iconGap == 7 and db.iconY == 0
 		and headerBadge().Icon.texture == SKULL, "/dec reset puts them all back")
 
 	ns.SlashHandler("icon swords")

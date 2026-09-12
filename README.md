@@ -34,10 +34,11 @@ Turn it off any time: Esc > Options > AddOns > Delve Enemy Counter, or `/dec off
     /dec icon <name>  skull, swords, cross, heart, affix, or a texture path
     /dec size <n>     icon size, 1 matches the lives icon beside it
     /dec gap <n>      pixels between the icon and the count
+    /dec y <n>        lift the icon, to sit level with the count
     /dec reset        icon and size back to the defaults
     /dec debug        what the addon can see (for bug reports)
 
-The icon, size and gap change on the spot, no reload, so they can be judged in a
+The icon, size, gap and lift change on the spot, no reload, so they can be judged in a
 real Delve rather than guessed at.
 
 ## Developing
