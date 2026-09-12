@@ -231,7 +231,7 @@ local BADGE_ICON = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8"
 local BADGE_ICON_SIZE = 16
 -- The skull's art fills its square where the heart's leaves a margin, so at
 -- the same box size it reads larger. Take it in to sit level with the heart.
-local BADGE_ICON_INSET = 2
+local BADGE_ICON_INSET = 4
 
 -- The leftmost currency frame the header currently shows (the heart), to
 -- take size, font and colour from.
