@@ -6,15 +6,20 @@
 -- enemies: the count drops by one when a whole pack is cleared.
 --
 -- Hover is the only way the game offers that number, which puts it out of
--- reach of anyone not playing with a mouse. This addon paints it in white
--- over the icon and leaves it there, so no pointer is needed to read it.
--- Nothing happens outside Delves.
+-- reach of anyone not playing with a mouse. This addon puts it on screen and
+-- leaves it there, so no pointer is needed to read it. Nothing happens
+-- outside Delves.
 --
 -- How it works: each widget frame carries widgetID and widgetType; the
 -- widget's data comes from the type's visualization-info function
 -- (registered in Blizzard's UIWidgetManager), and the tooltip mixin also
 -- keeps the text on the frame or one of its children. Whichever yields
--- "n / m", n is painted over the icon.
+-- "n / m", n is what we show.
+--
+-- Where it goes: the Delves header widget already draws its lives remaining
+-- as an icon and a number, so the count joins that row rather than sitting
+-- on top of an affix icon. Anywhere else, it falls back to painting over
+-- the icon.
 
 local addonName, ns = ...
 
@@ -32,6 +37,8 @@ local DEFAULTS = {
 local db
 -- Widget frame -> our overlay font string (weak keys: frames may be released).
 local overlays = setmetatable({}, { __mode = "k" })
+-- Currency container -> our badge frame, same weak keys for the same reason.
+local badges = setmetatable({}, { __mode = "k" })
 local scanPending = false
 
 local function Print(msg)
@@ -207,26 +214,145 @@ local function OverlayFor(frame)
     return text
 end
 
+-- -------------------------------------------------------------------- badges
+
+-- The Delves header widget (UIWidgetTemplateScenarioHeaderDelves) draws its
+-- lives remaining -- the heart and its number -- in CurrencyContainer, a
+-- HorizontalLayoutFrame holding UIWidgetBaseCurrencyTemplate frames: icon,
+-- a 5px gap, count. We put one more frame of that shape in the container at
+-- layoutIndex 0, so Blizzard's own layout places it left of the heart with
+-- the container's spacing, and we copy the heart's icon, size, font and
+-- colour so the row reads as one. The borrowed heart is a placeholder until
+-- there is a monster icon to use instead.
+local BADGE_LAYOUT_INDEX = 0
+local BADGE_ICON_GAP = 5
+-- Only used when there is no currency frame to copy: the skull raid marker,
+-- which is always present and at least reads as "enemies".
+local FALLBACK_ICON = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8"
+local FALLBACK_ICON_SIZE = 16
+
+-- The leftmost currency frame the header currently shows (the heart), to
+-- copy its look from.
+local function ModelCurrency(header)
+    local pool = header.currencyPool
+    if type(pool) ~= "table" or type(pool.EnumerateActive) ~= "function" then
+        return nil
+    end
+    local best
+    for frame in pool:EnumerateActive() do
+        if not best or (frame.layoutIndex or 0) < (best.layoutIndex or 0) then
+            best = frame
+        end
+    end
+    return best
+end
+
+local function BadgeTooltip(self)
+    if not self.tooltipText then
+        return
+    end
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetText(self.tooltipText, 1, 1, 1, 1, true)
+    GameTooltip:Show()
+end
+
+local function BadgeFor(container)
+    local badge = badges[container]
+    if not badge then
+        badge = CreateFrame("Frame", nil, container)
+        badge.layoutIndex = BADGE_LAYOUT_INDEX
+        badge.Icon = badge:CreateTexture(nil, "OVERLAY")
+        badge.Icon:SetPoint("LEFT")
+        badge.Text = badge:CreateFontString(nil, "OVERLAY", "GameFontNormal_NoShadow")
+        badge.Text:SetPoint("LEFT", badge.Icon, "RIGHT", BADGE_ICON_GAP, 0)
+        badge:SetScript("OnEnter", BadgeTooltip)
+        badge:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        badges[container] = badge
+    end
+    return badge
+end
+
+-- Draw the count in the header's currency row, matching the heart beside it.
+-- Returns the badge, or nil when this widget has no such row.
+local function PaintBadge(header, remaining, tooltipText)
+    local container = header.CurrencyContainer
+    if type(container) ~= "table" then
+        return nil
+    end
+    local badge = BadgeFor(container)
+    local model = ModelCurrency(header)
+    local icon = model and model.Icon
+    if icon then
+        badge.Icon:SetTexture(icon:GetTexture())
+        badge.Icon:SetSize(icon:GetWidth() or FALLBACK_ICON_SIZE, icon:GetHeight() or FALLBACK_ICON_SIZE)
+    else
+        badge.Icon:SetTexture(FALLBACK_ICON)
+        badge.Icon:SetSize(FALLBACK_ICON_SIZE, FALLBACK_ICON_SIZE)
+    end
+    if model and model.Text then
+        local font = model.Text:GetFontObject()
+        if font then
+            badge.Text:SetFontObject(font)
+        end
+        badge.Text:SetTextColor(model.Text:GetTextColor())
+    end
+    badge.Text:SetText(remaining)
+    badge.tooltipText = tooltipText
+    local iconWidth = badge.Icon:GetWidth() or FALLBACK_ICON_SIZE
+    local iconHeight = badge.Icon:GetHeight() or FALLBACK_ICON_SIZE
+    local textWidth = badge.Text:GetStringWidth() or 0
+    local textHeight = badge.Text:GetStringHeight() or 0
+    badge:SetSize(iconWidth + BADGE_ICON_GAP + textWidth, math.max(iconHeight, textHeight))
+    badge:Show()
+    if type(container.Layout) == "function" then
+        container:Layout()
+    end
+    return badge
+end
+
+local function HideBadge(container, badge)
+    if not badge:IsShown() then
+        return
+    end
+    badge:Hide()
+    if type(container.Layout) == "function" then
+        container:Layout()
+    end
+end
+
 local function UpdateOverlays()
     if not (db and db.enabled and InDelve()) then
         for _, text in pairs(overlays) do
             text:Hide()
         end
+        for container, badge in pairs(badges) do
+            HideBadge(container, badge)
+        end
         return
     end
-    local painted = {}
+    local painted, shownBadges = {}, {}
     for _, frame in ipairs(WidgetFrames()) do
-        local remaining, _, target = WidgetRemaining(frame)
+        local remaining, text, target = WidgetRemaining(frame)
         if remaining then
-            local text = OverlayFor(target)
-            text:SetText(remaining)
-            text:Show()
-            painted[target] = true
+            local badge = PaintBadge(frame, remaining, text)
+            if badge then
+                shownBadges[badge] = true
+            else
+                local overlay = OverlayFor(target)
+                overlay:SetText(remaining)
+                overlay:Show()
+                painted[target] = true
+            end
         end
     end
     for target, text in pairs(overlays) do
         if not painted[target] then
             text:Hide()
+        end
+    end
+    for container, badge in pairs(badges) do
+        if not shownBadges[badge] then
+            HideBadge(container, badge)
         end
     end
 end
@@ -330,7 +456,7 @@ local function RegisterOptions()
             UpdateOverlays()
         end)
     Settings.CreateCheckbox(category, setting,
-        "Keep the Nemesis Influence \"enemy groups remaining\" number on its Delve tracker icon, so it can be read without a mouse.")
+        "Keep the Nemesis Influence \"enemy groups remaining\" number in the Delve tracker, beside the lives remaining, so it can be read without a mouse.")
     Settings.RegisterAddOnCategory(category)
 end
 
@@ -392,4 +518,5 @@ ns.WidgetRemaining = WidgetRemaining
 ns.UpdateOverlays = UpdateOverlays
 ns.SlashHandler = SlashHandler
 ns.GetOverlays = function() return overlays end
+ns.GetBadges = function() return badges end
 ns.frame = frame

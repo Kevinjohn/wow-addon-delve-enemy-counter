@@ -11,8 +11,10 @@ one small icon on demand: the game is keeping progress you need to play well
 behind an input method you don't have. Hover is a fine way to offer detail. It
 is not a fine way to be the only way.
 
-This paints the number onto the icon and leaves it there. No pointer, no hover,
-no interaction. Mouse users get it at a glance mid-pull too.
+This puts the number in the tracker's own header, alongside the lives
+remaining, and leaves it there. No pointer, no hover, no interaction. It is
+drawn the way the game draws that row, so it reads as part of the UI rather
+than on top of it. Mouse users get it at a glance mid-pull too.
 
 Nothing happens outside Delves. The number is the game's own; it counts groups,
 not individual mobs.

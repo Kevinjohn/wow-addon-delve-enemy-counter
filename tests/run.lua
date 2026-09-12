@@ -3,9 +3,10 @@
 --   * the "n / m" in a widget's tooltip is parsed as the last ratio in it,
 --   * inside a Delve, every widget frame the widget manager knows about is
 --     read -- from the widget manager's own data, from an affix spell's live
---     description (painted on that spell's icon), or from a tooltip kept on
---     the frame or one of its children -- and the remaining count is painted
---     over it,
+--     description, or from a tooltip kept on the frame or one of its
+--     children -- and the remaining count is shown: in the Delves header's
+--     own lives-remaining row when there is one, painted over the icon
+--     otherwise,
 --   * the number follows the live data on every widget update, and frames
 --     without a ratio are left alone,
 --   * the overlay is hidden outside a Delve and when the addon is off,
@@ -53,6 +54,10 @@ local function widget()
 	function w:IsShown() return self.shown end
 	function w:SetText(t) self.textValue = t end
 	function w:CreateFontString() return widget() end
+	function w:CreateTexture() return widget() end
+	function w:SetTexture(t) self.texture = t end
+	function w:GetTexture() return self.texture end
+	function w:Layout() self.layouts = (rawget(self, "layouts") or 0) + 1 end
 	return setmetatable(w, { __index = function() return function() end end })
 end
 _G.CreateFrame = function() return widget() end
@@ -68,10 +73,25 @@ function childWidget:GetChildren() return childIcon end
 local otherWidget = widget(); otherWidget.widgetID = 6002; otherWidget.widgetType = 6
 -- The Delves header: affix spells with empty tooltips whose live description
 -- carries the number, and icon children keyed by spellID.
+-- Its lives-remaining row is the real thing in miniature: a layout frame
+-- holding one pooled currency frame (the heart and its count).
 local headerWidget = widget(); headerWidget.widgetID = 6183; headerWidget.widgetType = 29
 local iconA = widget(); iconA.spellID = 1001
 local iconB = widget(); iconB.spellID = 1002
 function headerWidget:GetChildren() return iconA, iconB end
+local heart = widget(); heart.layoutIndex = 1
+heart.Icon = widget(); heart.Icon:SetTexture("Interface\\Icons\\Heart")
+heart.Text = widget()
+local currencyContainer = widget()
+headerWidget.CurrencyContainer = currencyContainer
+headerWidget.currencyPool = { EnumerateActive = function()
+	local done = false
+	return function()
+		if done then return nil end
+		done = true
+		return heart
+	end
+end }
 local descriptions = {
 	[1001] = "Curiosity buff.",
 	[1002] = "The Nemesis's allies are wandering.\n\nEnemy groups remaining: 3 / 4",
@@ -126,7 +146,7 @@ _G.Settings = {
 }
 
 -- ---------------------------------------------------------------- load addon
-local ns, frame, overlays, db
+local ns, frame, overlays, badges, db
 local function load()
 	settings.proxies, settings.checkboxes = {}, 0
 	ns = {}
@@ -134,8 +154,10 @@ local function load()
 	frame = ns.frame
 	frame.handler(frame, "ADDON_LOADED", "DelveEnemyCounter")
 	overlays = ns.GetOverlays()
+	badges = ns.GetBadges()
 	db = _G.DelveEnemyCounterDB
 end
+local function headerBadge() return badges[currencyContainer] end
 local function fire(event, ...) frame.handler(frame, event, ...) end
 local function proxy(key) return settings.proxies["DelveEnemyCounter_" .. key] end
 
@@ -164,7 +186,7 @@ check(type(SlashCmdList.DELVEENEMYCOUNTER) == "function" and SLASH_DELVEENEMYCOU
 
 -- ------------------------------------------------------------ outside a Delve
 fire("UPDATE_UI_WIDGET")
-check(next(overlays) == nil, "nothing is painted outside a Delve")
+check(next(overlays) == nil and next(badges) == nil, "nothing is painted outside a Delve")
 
 -- ---------------------------------------------------------------- in a Delve
 world.difficultyID = 208
@@ -172,13 +194,19 @@ fire("PLAYER_ENTERING_WORLD")
 check(overlays[nemesisWidget] and overlays[nemesisWidget].shown and overlays[nemesisWidget].textValue == "1",
 	"nemesis widget gets its remaining count painted from widget-manager data")
 check(overlays[childWidget] and overlays[childWidget].textValue == "2", "tooltip on a child frame is found")
-check(overlays[iconB] and overlays[iconB].textValue == "3" and overlays[iconA] == nil and overlays[headerWidget] == nil,
-	"Delves header: number from the spell description, painted on that spell's icon")
+check(headerBadge() and headerBadge().shown and headerBadge().Text.textValue == "3",
+	"Delves header: number from the spell description, shown in the lives row")
+check(overlays[iconA] == nil and overlays[iconB] == nil and overlays[headerWidget] == nil,
+	"and nothing is painted over the affix icons")
+check(headerBadge().layoutIndex == 0 and (currencyContainer.layouts or 0) > 0,
+	"the badge is laid out left of the heart by the container itself")
+check(headerBadge().Icon.texture == "Interface\\Icons\\Heart",
+	"the badge borrows the heart's icon so the row matches")
 check(overlays[otherWidget] == nil and overlays[plain] == nil, "frames without a ratio are untouched")
 
 descriptions[1002] = descriptions[1002]:gsub("3 / 4", "2 / 4")
 fire("UPDATE_UI_WIDGET")
-check(overlays[iconB].textValue == "2", "icon overlay follows the live description")
+check(headerBadge().Text.textValue == "2", "the badge follows the live description")
 NEMESIS_TIP = NEMESIS_TIP:gsub("1 / 4", "0 / 4")
 fire("UPDATE_UI_WIDGET")
 check(overlays[nemesisWidget].textValue == "0", "overlay follows the tooltip")
@@ -187,10 +215,10 @@ check(overlays[nemesisWidget].textValue == "0", "overlay follows the tooltip")
 local savedDescription = descriptions[1002]
 descriptions[1002] = "The Nemesis's allies are wandering."
 fire("UPDATE_UI_WIDGET")
-check(overlays[iconB].shown == false, "an affix that stops reporting a ratio loses its number")
+check(headerBadge().shown == false, "an affix that stops reporting a ratio loses its number")
 descriptions[1002] = savedDescription
 fire("UPDATE_UI_WIDGET")
-check(overlays[iconB].shown == true and overlays[iconB].textValue == "2", "and gets it back when it returns")
+check(headerBadge().shown == true and headerBadge().Text.textValue == "2", "and gets it back when it returns")
 
 -- -------------------------------------------------------------------- /dec
 ns.SlashHandler("debug")
@@ -214,7 +242,8 @@ do
 end
 
 ns.SlashHandler("off")
-check(db.enabled == false and overlays[nemesisWidget].shown == false, "/dec off hides the numbers")
+check(db.enabled == false and overlays[nemesisWidget].shown == false and headerBadge().shown == false,
+	"/dec off hides the numbers")
 ns.SlashHandler("on")
 check(db.enabled == true and overlays[nemesisWidget].shown == true, "/dec on shows them again")
 local before = #chat
@@ -223,7 +252,7 @@ check(chat[#chat]:find("usage: /dec", 1, true) ~= nil and #chat > before, "an un
 
 world.difficultyID = 0
 fire("ZONE_CHANGED_NEW_AREA")
-check(overlays[nemesisWidget].shown == false, "hidden outside a Delve")
+check(overlays[nemesisWidget].shown == false and headerBadge().shown == false, "hidden outside a Delve")
 world.difficultyID = 208
 fire("PLAYER_ENTERING_WORLD")
 check(overlays[nemesisWidget].shown == true, "shown again on returning to a Delve")

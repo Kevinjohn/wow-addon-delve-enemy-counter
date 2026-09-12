@@ -1,6 +1,6 @@
 ## Interface: 120100
 ## Title: Delve Enemy Counter
-## Notes: Puts the Nemesis Influence "enemy groups remaining" count on the tracker icon, so it can be read without a mouse.
+## Notes: Puts the Nemesis Influence "enemy groups remaining" count in the Delve tracker beside the lives remaining, so it can be read without a mouse.
 ## Author: Kevinjohn Gallagher
 ## Version: @project-version@
 ## X-License: MIT

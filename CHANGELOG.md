@@ -4,6 +4,19 @@ All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- The count now sits in the Delve tracker header's own row, immediately left of
+  the lives remaining and with the same spacing, instead of in white text over
+  the affix icon. It is built as one more frame in the header's currency
+  container, borrowing the neighbouring icon, font and colour, so the game's
+  own layout places it and it reads as native. Widgets without that row keep
+  the old overlay.
+- The icon is the lives-remaining heart, borrowed as a placeholder until there
+  is enemy iconography to use instead.
+- Hovering the count shows the text it was read from.
+
 ## [0.1.0] - 2026-09-11
 
 ### Added
@@ -32,5 +45,6 @@ All notable changes to this project are documented here, following
 - Separated out of Mislaid Curiosity TomTom, where this was one option among
   many, into an addon that does only this.
 - The overlay's look -- white text centred on the icon, no size or colour
-  setting -- is deliberately plain and expected to change.
+  setting -- is deliberately plain and expected to change. (Changed in
+  Unreleased.)
 - Not yet tested in a live Delve; the test harness stubs the widget API.

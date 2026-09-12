@@ -29,4 +29,5 @@ read_globals = {
 	"DifficultyUtil",
 	"C_Timer",
 	"C_Spell",
+	"GameTooltip",
 }
