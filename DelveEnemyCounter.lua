@@ -221,18 +221,17 @@ end
 -- HorizontalLayoutFrame holding UIWidgetBaseCurrencyTemplate frames: icon,
 -- a 5px gap, count. We put one more frame of that shape in the container at
 -- layoutIndex 0, so Blizzard's own layout places it left of the heart with
--- the container's spacing, and we copy the heart's icon, size, font and
--- colour so the row reads as one. The borrowed heart is a placeholder until
--- there is a monster icon to use instead.
+-- the container's spacing, and we take the heart's icon size, font and colour
+-- so the row reads as one. The icon itself is the skull raid marker: the
+-- game's own "enemies" mark, flat art at the same weight as the heart.
 local BADGE_LAYOUT_INDEX = 0
 local BADGE_ICON_GAP = 5
--- Only used when there is no currency frame to copy: the skull raid marker,
--- which is always present and at least reads as "enemies".
-local FALLBACK_ICON = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8"
-local FALLBACK_ICON_SIZE = 16
+local BADGE_ICON = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8"
+-- Used when there is no currency frame to take a size from.
+local BADGE_ICON_SIZE = 16
 
 -- The leftmost currency frame the header currently shows (the heart), to
--- copy its look from.
+-- take size, font and colour from.
 local function ModelCurrency(header)
     local pool = header.currencyPool
     if type(pool) ~= "table" or type(pool.EnumerateActive) ~= "function" then
@@ -272,7 +271,7 @@ local function BadgeFor(container)
     return badge
 end
 
--- Draw the count in the header's currency row, matching the heart beside it.
+-- Draw the count in the header's currency row, matched to the heart beside it.
 -- Returns the badge, or nil when this widget has no such row.
 local function PaintBadge(header, remaining, tooltipText)
     local container = header.CurrencyContainer
@@ -282,13 +281,9 @@ local function PaintBadge(header, remaining, tooltipText)
     local badge = BadgeFor(container)
     local model = ModelCurrency(header)
     local icon = model and model.Icon
-    if icon then
-        badge.Icon:SetTexture(icon:GetTexture())
-        badge.Icon:SetSize(icon:GetWidth() or FALLBACK_ICON_SIZE, icon:GetHeight() or FALLBACK_ICON_SIZE)
-    else
-        badge.Icon:SetTexture(FALLBACK_ICON)
-        badge.Icon:SetSize(FALLBACK_ICON_SIZE, FALLBACK_ICON_SIZE)
-    end
+    badge.Icon:SetTexture(BADGE_ICON)
+    badge.Icon:SetSize((icon and icon:GetWidth()) or BADGE_ICON_SIZE,
+        (icon and icon:GetHeight()) or BADGE_ICON_SIZE)
     if model and model.Text then
         local font = model.Text:GetFontObject()
         if font then
@@ -298,8 +293,8 @@ local function PaintBadge(header, remaining, tooltipText)
     end
     badge.Text:SetText(remaining)
     badge.tooltipText = tooltipText
-    local iconWidth = badge.Icon:GetWidth() or FALLBACK_ICON_SIZE
-    local iconHeight = badge.Icon:GetHeight() or FALLBACK_ICON_SIZE
+    local iconWidth = badge.Icon:GetWidth() or BADGE_ICON_SIZE
+    local iconHeight = badge.Icon:GetHeight() or BADGE_ICON_SIZE
     local textWidth = badge.Text:GetStringWidth() or 0
     local textHeight = badge.Text:GetStringHeight() or 0
     badge:SetSize(iconWidth + BADGE_ICON_GAP + textWidth, math.max(iconHeight, textHeight))

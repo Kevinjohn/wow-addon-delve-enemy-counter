@@ -200,8 +200,8 @@ check(overlays[iconA] == nil and overlays[iconB] == nil and overlays[headerWidge
 	"and nothing is painted over the affix icons")
 check(headerBadge().layoutIndex == 0 and (currencyContainer.layouts or 0) > 0,
 	"the badge is laid out left of the heart by the container itself")
-check(headerBadge().Icon.texture == "Interface\\Icons\\Heart",
-	"the badge borrows the heart's icon so the row matches")
+check(headerBadge().Icon.texture == "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8",
+	"the badge uses the skull marker, not the neighbouring currency's icon")
 check(overlays[otherWidget] == nil and overlays[plain] == nil, "frames without a ratio are untouched")
 
 descriptions[1002] = descriptions[1002]:gsub("3 / 4", "2 / 4")
