@@ -17,13 +17,14 @@ All notable changes to this project are documented here, following
   sit level with the lives-remaining heart beside it.
 
 ### Added
-- `/dec icon <name>`, `/dec size <n>`, `/dec gap <n>` and `/dec y <n>`, all
-  taking effect on the spot with no reload, plus `/dec reset`. Icons: `skull`, `swords`, `cross`, `heart`
+- `/dec icon <name>`, `/dec size <n>`, `/dec gap <n>`, `/dec y <n>` and
+  `/dec x <n>`, all taking effect on the spot with no reload, plus
+  `/dec reset`. Icons: `skull`, `swords`, `cross`, `heart`
   (copies the lives icon) and `affix` (the reporting affix's own spell icon);
   any texture path or atlas name is accepted too. Size is a fraction of the
   lives icon beside it, 0.3 to 2; gap is the pixels between the icon and the
-  count, 0 to 20; y lifts the icon without moving the count, -10 to 10. All
-  are saved.
+  count, 0 to 20; y lifts the icon without moving the count, -10 to 10; x
+  shifts the whole thing sideways, -40 to 40. All are saved.
 - Hovering the count shows the text it was read from.
 
 ## [0.1.0] - 2026-09-11

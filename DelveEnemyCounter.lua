@@ -35,7 +35,8 @@ local DEFAULTS = {
     icon = "skull",  -- a name from ICONS below, or a texture path
     iconScale = 0.65, -- fraction of the neighbouring currency icon's size
     iconGap = 7,      -- pixels between the icon and the count
-    iconY = 0,        -- pixels to lift the icon, to sit level with the count
+    iconY = 1,        -- pixels to lift the icon, to sit level with the count
+    badgeX = -10,     -- pixels to shift the whole badge, negative for left
 }
 
 local db
@@ -235,6 +236,7 @@ local BADGE_ICON_SIZE = 16
 local MIN_ICON_SCALE, MAX_ICON_SCALE = 0.3, 2
 local MIN_ICON_GAP, MAX_ICON_GAP = 0, 20
 local MIN_ICON_Y, MAX_ICON_Y = -10, 10
+local MIN_BADGE_X, MAX_BADGE_X = -40, 40
 
 -- Icons worth trying, in the order /dec icon lists them. "heart" copies the
 -- neighbouring currency icon and "affix" the reporting affix's own spell
@@ -374,6 +376,10 @@ local function PaintBadge(header, remaining, tooltipText, source)
     badge.Text:SetPoint("LEFT", badge, "LEFT", iconWidth + gap, 0)
     badge.Text:SetText(remaining)
     badge.tooltipText = tooltipText
+    -- The container lays its children out left to right and grows leftward
+    -- from its right anchor, so padding after us shifts us left of the
+    -- lives icon without moving it.
+    badge.rightPadding = -(db.badgeX or DEFAULTS.badgeX)
     local iconHeight = badge.Icon:GetHeight() or BADGE_ICON_SIZE
     local textWidth = badge.Text:GetStringWidth() or 0
     local textHeight = badge.Text:GetStringHeight() or 0
@@ -457,11 +463,11 @@ local function Status()
             counts[#counts + 1] = remaining
         end
     end
-    Print(("%s; in a Delve: %s; icon %s at %.2f, gap %d, y %d; enemy groups remaining: %s"):format(
+    Print(("%s; in a Delve: %s; icon %s at %.2f, gap %d, y %d, x %d; enemy groups remaining: %s"):format(
         db.enabled and "on" or "off",
         InDelve() and "yes" or "no",
         tostring(db.icon), db.iconScale or DEFAULTS.iconScale, db.iconGap or DEFAULTS.iconGap,
-        db.iconY or DEFAULTS.iconY,
+        db.iconY or DEFAULTS.iconY, db.badgeX or DEFAULTS.badgeX,
         #counts > 0 and table.concat(counts, ", ") or "nothing found"))
 end
 
@@ -506,7 +512,7 @@ local function SetIconY(value)
     local y = tonumber(value)
     if not y then
         Print(("y %d; give a number of pixels between %d and %d (positive lifts the icon)."):format(
-            db.iconY or DEFAULTS.iconY, MIN_ICON_Y, MAX_ICON_Y))
+            db.iconY or DEFAULTS.iconY, db.badgeX or DEFAULTS.badgeX, MIN_ICON_Y, MAX_ICON_Y))
         return
     end
     db.iconY = math.max(MIN_ICON_Y, math.min(MAX_ICON_Y, math.floor(y + 0.5)))
@@ -514,12 +520,24 @@ local function SetIconY(value)
     Print(("y %d"):format(db.iconY))
 end
 
+local function SetBadgeX(value)
+    local x = tonumber(value)
+    if not x then
+        Print(("x %d; give a number of pixels between %d and %d (negative moves left)."):format(
+            db.badgeX or DEFAULTS.badgeX, MIN_BADGE_X, MAX_BADGE_X))
+        return
+    end
+    db.badgeX = math.max(MIN_BADGE_X, math.min(MAX_BADGE_X, math.floor(x + 0.5)))
+    UpdateOverlays()
+    Print(("x %d"):format(db.badgeX))
+end
+
 local function Reset()
     db.icon, db.iconScale = DEFAULTS.icon, DEFAULTS.iconScale
-    db.iconGap, db.iconY = DEFAULTS.iconGap, DEFAULTS.iconY
+    db.iconGap, db.iconY, db.badgeX = DEFAULTS.iconGap, DEFAULTS.iconY, DEFAULTS.badgeX
     UpdateOverlays()
-    Print(("back to the defaults: icon %s at %.2f, gap %d, y %d"):format(
-        db.icon, db.iconScale, db.iconGap, db.iconY))
+    Print(("back to the defaults: icon %s at %.2f, gap %d, y %d, x %d"):format(
+        db.icon, db.iconScale, db.iconGap, db.iconY, db.badgeX))
 end
 
 local function Debug()
@@ -556,7 +574,7 @@ local function Debug()
     end
 end
 
-local USAGE = "usage: /dec on|off, /dec icon <name>, /dec size <n>, /dec gap <n>, /dec y <n>, /dec reset, /dec status, /dec debug"
+local USAGE = "usage: /dec on|off, /dec icon <name>, /dec size <n>, /dec gap <n>, /dec y <n>, /dec x <n>, /dec reset, /dec status, /dec debug"
 
 local function SlashHandler(msg)
     msg = msg or ""
@@ -574,6 +592,9 @@ local function SlashHandler(msg)
         return
     elseif cmd == "y" then
         SetIconY(arg)
+        return
+    elseif cmd == "x" then
+        SetBadgeX(arg)
         return
     elseif cmd == "reset" then
         Reset()
