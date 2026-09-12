@@ -232,7 +232,7 @@ local BADGE_ICON_SIZE = 16
 -- The skull's art fills its square where the heart's leaves a margin, so at
 -- the same box size it reads larger. Draw it at a fraction of the heart's
 -- box so it sits level whatever size the client gives the heart.
-local BADGE_ICON_SCALE = 0.7
+local BADGE_ICON_SCALE = 0.8
 
 -- The leftmost currency frame the header currently shows (the heart), to
 -- take size, font and colour from.
@@ -286,6 +286,7 @@ local function PaintBadge(header, remaining, tooltipText)
     local model = ModelCurrency(header)
     local icon = model and model.Icon
     badge.Icon:SetTexture(BADGE_ICON)
+    badge.Icon:SetVertexColor(1, 1, 1, 1)
     badge.Icon:SetSize(((icon and icon:GetWidth()) or BADGE_ICON_SIZE) * BADGE_ICON_SCALE,
         ((icon and icon:GetHeight()) or BADGE_ICON_SIZE) * BADGE_ICON_SCALE)
     if model and model.Text then
