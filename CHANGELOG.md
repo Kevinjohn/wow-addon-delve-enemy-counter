@@ -14,7 +14,7 @@ All notable changes to this project are documented here, following
   own layout places it and it reads as native. Widgets without that row keep
   the old overlay.
 - The icon is the skull raid marker, the game's own "enemies" mark, sized to
-  match the lives-remaining heart beside it.
+  sit level with the lives-remaining heart beside it.
 - Hovering the count shows the text it was read from.
 
 ## [0.1.0] - 2026-09-11

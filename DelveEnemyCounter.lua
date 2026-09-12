@@ -229,6 +229,9 @@ local BADGE_ICON_GAP = 5
 local BADGE_ICON = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8"
 -- Used when there is no currency frame to take a size from.
 local BADGE_ICON_SIZE = 16
+-- The skull's art fills its square where the heart's leaves a margin, so at
+-- the same box size it reads larger. Take it in to sit level with the heart.
+local BADGE_ICON_INSET = 2
 
 -- The leftmost currency frame the header currently shows (the heart), to
 -- take size, font and colour from.
@@ -282,8 +285,8 @@ local function PaintBadge(header, remaining, tooltipText)
     local model = ModelCurrency(header)
     local icon = model and model.Icon
     badge.Icon:SetTexture(BADGE_ICON)
-    badge.Icon:SetSize((icon and icon:GetWidth()) or BADGE_ICON_SIZE,
-        (icon and icon:GetHeight()) or BADGE_ICON_SIZE)
+    badge.Icon:SetSize(((icon and icon:GetWidth()) or BADGE_ICON_SIZE) - BADGE_ICON_INSET,
+        ((icon and icon:GetHeight()) or BADGE_ICON_SIZE) - BADGE_ICON_INSET)
     if model and model.Text then
         local font = model.Text:GetFontObject()
         if font then
