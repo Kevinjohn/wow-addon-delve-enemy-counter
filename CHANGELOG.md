@@ -4,17 +4,19 @@ All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-09-12
 
 ### Changed
-- The count now sits in the Delve tracker header's own row, immediately left of
-  the lives remaining and with the same spacing, instead of in white text over
-  the affix icon. It is built as one more frame in the header's currency
-  container, borrowing the neighbouring icon, font and colour, so the game's
-  own layout places it and it reads as native. Widgets without that row keep
-  the old overlay.
-- The icon is the skull raid marker, the game's own "enemies" mark, sized to
-  sit level with the lives-remaining heart beside it.
+- The enemy groups remaining now reads as part of Blizzard's own Delve tracker:
+  a skull and a number in the tracker header, sitting beside the lives
+  remaining in the same row, the same font, the same colour. No more white text
+  over the affix icon.
+- The skull is the game's own marker for enemies, so the row says what it means
+  at a glance: skull and a number for the groups left, heart and a number for
+  the lives left.
+- Under the hood it is one more frame in the header's own currency container,
+  placed by Blizzard's layout rather than anchored over the top of it. Widgets
+  without that row keep the old overlay.
 
 ### Added
 - `/dec icon <name>`, `/dec size <n>`, `/dec gap <n>`, `/dec y <n>` and
@@ -26,6 +28,9 @@ All notable changes to this project are documented here, following
   count, 0 to 20; y lifts the icon without moving the count, -10 to 10; x
   shifts the whole thing sideways, -40 to 40. All are saved.
 - Hovering the count shows the text it was read from.
+
+### Notes
+- Checked in a live Delve; the placement and sizes are what came out of that.
 
 ## [0.1.0] - 2026-09-11
 
@@ -55,6 +60,5 @@ All notable changes to this project are documented here, following
 - Separated out of Mislaid Curiosity TomTom, where this was one option among
   many, into an addon that does only this.
 - The overlay's look -- white text centred on the icon, no size or colour
-  setting -- is deliberately plain and expected to change. (Changed in
-  Unreleased.)
+  setting -- is deliberately plain and expected to change. (Changed in 0.2.0.)
 - Not yet tested in a live Delve; the test harness stubs the widget API.
