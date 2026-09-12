@@ -34,6 +34,7 @@ local DEFAULTS = {
     enabled = true,  -- master switch
     icon = "skull",  -- a name from ICONS below, or a texture path
     iconScale = 0.8, -- fraction of the neighbouring currency icon's size
+    iconGap = 5,     -- pixels between the icon and the count
 }
 
 local db
@@ -228,10 +229,10 @@ end
 -- game's own "enemies" mark; /dec icon and /dec size change both live,
 -- because judging either one needs seeing it in a real Delve.
 local BADGE_LAYOUT_INDEX = 0
-local BADGE_ICON_GAP = 5
 -- Used when there is no currency frame to take a size from.
 local BADGE_ICON_SIZE = 16
 local MIN_ICON_SCALE, MAX_ICON_SCALE = 0.3, 2
+local MIN_ICON_GAP, MAX_ICON_GAP = 0, 20
 
 -- Icons worth trying, in the order /dec icon lists them. "heart" copies the
 -- neighbouring currency icon and "affix" the reporting affix's own spell
@@ -331,7 +332,7 @@ local function BadgeFor(container)
         badge.Icon = badge:CreateTexture(nil, "OVERLAY")
         badge.Icon:SetPoint("LEFT")
         badge.Text = badge:CreateFontString(nil, "OVERLAY", "GameFontNormal_NoShadow")
-        badge.Text:SetPoint("LEFT", badge.Icon, "RIGHT", BADGE_ICON_GAP, 0)
+        badge.Text:SetPoint("LEFT", badge.Icon, "RIGHT", 0, 0)
         badge:SetScript("OnEnter", BadgeTooltip)
         badge:SetScript("OnLeave", function() GameTooltip:Hide() end)
         badges[container] = badge
@@ -362,13 +363,15 @@ local function PaintBadge(header, remaining, tooltipText, source)
         end
         badge.Text:SetTextColor(model.Text:GetTextColor())
     end
+    local gap = db.iconGap or DEFAULTS.iconGap
+    badge.Text:SetPoint("LEFT", badge.Icon, "RIGHT", gap, 0)
     badge.Text:SetText(remaining)
     badge.tooltipText = tooltipText
     local iconWidth = badge.Icon:GetWidth() or BADGE_ICON_SIZE
     local iconHeight = badge.Icon:GetHeight() or BADGE_ICON_SIZE
     local textWidth = badge.Text:GetStringWidth() or 0
     local textHeight = badge.Text:GetStringHeight() or 0
-    badge:SetSize(iconWidth + BADGE_ICON_GAP + textWidth, math.max(iconHeight, textHeight))
+    badge:SetSize(iconWidth + gap + textWidth, math.max(iconHeight, textHeight))
     badge:Show()
     if type(container.Layout) == "function" then
         container:Layout()
@@ -448,10 +451,10 @@ local function Status()
             counts[#counts + 1] = remaining
         end
     end
-    Print(("%s; in a Delve: %s; icon %s at %.2f; enemy groups remaining: %s"):format(
+    Print(("%s; in a Delve: %s; icon %s at %.2f, gap %d; enemy groups remaining: %s"):format(
         db.enabled and "on" or "off",
         InDelve() and "yes" or "no",
-        tostring(db.icon), db.iconScale or DEFAULTS.iconScale,
+        tostring(db.icon), db.iconScale or DEFAULTS.iconScale, db.iconGap or DEFAULTS.iconGap,
         #counts > 0 and table.concat(counts, ", ") or "nothing found"))
 end
 
@@ -480,10 +483,22 @@ local function SetScale(value)
     Print(("size %.2f"):format(db.iconScale))
 end
 
-local function Reset()
-    db.icon, db.iconScale = DEFAULTS.icon, DEFAULTS.iconScale
+local function SetGap(value)
+    local gap = tonumber(value)
+    if not gap then
+        Print(("gap %d; give a number of pixels between %d and %d (the game uses 5)."):format(
+            db.iconGap or DEFAULTS.iconGap, MIN_ICON_GAP, MAX_ICON_GAP))
+        return
+    end
+    db.iconGap = math.max(MIN_ICON_GAP, math.min(MAX_ICON_GAP, math.floor(gap + 0.5)))
     UpdateOverlays()
-    Print(("icon and size back to the defaults: %s at %.2f"):format(db.icon, db.iconScale))
+    Print(("gap %d"):format(db.iconGap))
+end
+
+local function Reset()
+    db.icon, db.iconScale, db.iconGap = DEFAULTS.icon, DEFAULTS.iconScale, DEFAULTS.iconGap
+    UpdateOverlays()
+    Print(("back to the defaults: icon %s at %.2f, gap %d"):format(db.icon, db.iconScale, db.iconGap))
 end
 
 local function Debug()
@@ -520,7 +535,7 @@ local function Debug()
     end
 end
 
-local USAGE = "usage: /dec on|off, /dec icon <name>, /dec size <n>, /dec reset, /dec status, /dec debug"
+local USAGE = "usage: /dec on|off, /dec icon <name>, /dec size <n>, /dec gap <n>, /dec reset, /dec status, /dec debug"
 
 local function SlashHandler(msg)
     msg = msg or ""
@@ -532,6 +547,9 @@ local function SlashHandler(msg)
         return
     elseif cmd == "size" or cmd == "scale" then
         SetScale(arg)
+        return
+    elseif cmd == "gap" then
+        SetGap(arg)
         return
     elseif cmd == "reset" then
         Reset()

@@ -228,7 +228,7 @@ check(headerBadge().shown == true and headerBadge().Text.textValue == "2", "and 
 -- --------------------------------------------------------------- icon + size
 do
 	local SKULL = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8"
-	check(db.icon == "skull" and db.iconScale == 0.8, "icon and size have defaults")
+	check(db.icon == "skull" and db.iconScale == 0.8 and db.iconGap == 5, "icon, size and gap have defaults")
 
 	ns.SlashHandler("icon heart")
 	check(headerBadge().Icon.texture == "Interface\\Icons\\Heart", "/dec icon heart copies the neighbour")
@@ -256,9 +256,14 @@ do
 	check(chat[#chat]:find("skull, swords, cross, heart, affix", 1, true) ~= nil,
 		"/dec icon with no name lists the choices")
 
+	ns.SlashHandler("gap 2")
+	check(db.iconGap == 2, "/dec gap sets the space between icon and count")
+	ns.SlashHandler("gap 99")
+	check(db.iconGap == 20, "/dec gap clamps")
+
 	ns.SlashHandler("reset")
-	check(db.icon == "skull" and db.iconScale == 0.8 and headerBadge().Icon.texture == SKULL,
-		"/dec reset puts both back")
+	check(db.icon == "skull" and db.iconScale == 0.8 and db.iconGap == 5
+		and headerBadge().Icon.texture == SKULL, "/dec reset puts them all back")
 
 	ns.SlashHandler("icon swords")
 	load()
